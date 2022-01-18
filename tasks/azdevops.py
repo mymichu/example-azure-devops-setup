@@ -17,11 +17,15 @@ azuredevops_storage_container = "state"
 def login(c):
     az_user = os.getenv("AZ_USER", None)
     az_password = os.getenv("AZ_PASSWORD", None)
+    use_managed_identiy = os.getenv("AZ_USE_MANAGED_IDENTITY", False)
     result = c.run("az account show -o none", hide=True, warn=True)
-    if az_user != None and az_password != None:
-        c.run(f"az login -u {az_user} -p {az_password}")
-    elif result.ok == False:
-        c.run("az login")
+    if result.ok == False:
+        if use_managed_identiy == True:
+            c.run("az login --identity -o none")
+        elif az_user != None and az_password != None:
+            c.run(f"az login -u {az_user} -p {az_password}")
+        else:
+            c.run("az login")
     print("You are logged in!")
 
 
