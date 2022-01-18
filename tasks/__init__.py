@@ -3,8 +3,7 @@
 
 from invoke import Collection
 
-from tasks import azdevops, docker
+from tasks import azdevops
 
 
 ns = Collection.from_module(azdevops)
-ns.add_collection(Collection.from_module(docker, name="docker"))
