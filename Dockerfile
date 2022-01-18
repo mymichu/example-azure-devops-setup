@@ -1,5 +1,7 @@
 FROM ubuntu:20.04 as base
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update -y && apt-get install -y \
     curl \
     unzip \
@@ -33,3 +35,36 @@ RUN pip3 install tomlkit invoke==1.6.0
 # Azure Cli
 ARG AZURECLI_VERSION=2.30.0
 RUN pip3 install azure-cli==$AZURECLI_VERSION --no-cache-dir
+
+ENV DEBIAN_FRONTEND=dialog
+
+
+#################### dev-environment ####################
+##### User: dev
+##########################################################
+FROM base AS dev
+ENV DEBIAN_FRONTEND=noninteractive
+ARG USERNAME=dev
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+#
+#Install specific devtools
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    vim \
+    ssh \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* 
+#
+# Install Pylint
+RUN pip3 install --no-cache-dir pylint==2.6.0
+#
+# Create a non-root user to use if preferred - see https://aka.ms/vscode-remote/containers/non-root-user.
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME
+#
+# Clean up
+RUN apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+#Switch back to dialog
+ENV DEBIAN_FRONTEND=dialog

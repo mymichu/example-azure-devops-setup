@@ -10,7 +10,7 @@ current_file_dir = pathlib.Path(__file__).parent.absolute()
 home_dir = f'{current_file_dir}/..'
 azuredevops_storage_ressource_group = "azure_devops_rg"
 azuredevops_storage_account_name = "azuredevopstest"
-azuredevops_storage_state = "state"
+azuredevops_storage_container = "state"
 
 
 @task
@@ -27,14 +27,21 @@ def login(c):
 
 @task(pre=[login])
 def setup_storage(c):
+    result = c.run(f"az group exists -n {azuredevops_storage_ressource_group}",hide=True, warn=True)
+    exist = result.stdout
+    if exist.__contains__("false"):     
+        create_container(c)
+    else:
+        print("ressource exist does not have to be created!")
+
+def create_container(c):
     location = "westeurope"
     c.run(
-        f"az group create --location {location} --resource-group {azuredevops_storage_ressource_group}")
+            f"az group create --location {location} --resource-group {azuredevops_storage_ressource_group}")
     c.run(
-        f"az storage account create -n {azuredevops_storage_account_name} -g {azuredevops_storage_ressource_group} -l {location} --sku Standard_LRS")
+            f"az storage account create -n {azuredevops_storage_account_name} -g {azuredevops_storage_ressource_group} -l {location} --sku Standard_LRS")
     c.run(
-        f"az storage container create -n {azuredevops_storage_state} --account-name {azuredevops_storage_account_name}")
-
+            f"az storage container create -n {azuredevops_storage_container} --account-name {azuredevops_storage_account_name}")
 
 def read_azdevops_environment():
     az_devops_token = os.getenv("AZ_DEVOPS_AGENT_TOKEN", None)
@@ -56,7 +63,7 @@ def init(c):
               terraform init -input=false \
               -backend-config="resource_group_name={azuredevops_storage_ressource_group}" \
               -backend-config="storage_account_name={azuredevops_storage_account_name}" \
-              -backend-config="container_name={azuredevops_storage_state}" \
+              -backend-config="container_name={azuredevops_storage_container}" \
               -backend-config="key=environment/{environment}-azure-setup.tfstate" \
               -force-copy''')
 
