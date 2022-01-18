@@ -10,10 +10,18 @@ terraform {
   required_version = ">= 1.1.0"
 }
 
+variable "az_devops_url" {
+  type = string
+}
+
+variable "az_devops_token"{
+  type = string
+}
+
 provider "azuredevops" {
   # Remember to specify the org service url and personal access token details below
-  org_service_url       = "https://dev.azure.com/meyermichel/"
-  personal_access_token = "TODO"
+  org_service_url       = var.az_devops_url
+  personal_access_token = var.az_devops_token
 }
 
 module "project-a"{
